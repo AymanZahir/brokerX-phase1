@@ -1,0 +1,13 @@
+@startuml
+node "Docker Host (VM)" {
+  frame "docker-compose" {
+    node "brokerx-app" {
+      component "Spring Boot Monolith" as app
+      database "Flyway migrations" as flyway
+      app -- flyway
+    }
+    database "PostgreSQL" as db
+    app --> db
+  }
+}
+@enduml

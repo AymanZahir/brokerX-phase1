@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Build & Test
+        working-directory: projet-phase1
+        run: mvn -B clean verify
+
+      - name: Publish artifact
+        working-directory: projet-phase1
+        run: |
+          mkdir -p target/artifacts
+          cp target/*.jar target/artifacts/
+        if: success()
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: brokerx-jar
+          path: projet-phase1/target/artifacts/

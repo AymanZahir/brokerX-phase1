@@ -1,0 +1,6 @@
+.git
+.gitignore
+.target
+**/target/
+Dockerfile
+README.md

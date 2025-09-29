@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+
+actor Client
+actor "Service Paiement" as Payment
+
+rectangle "BrokerX Monolithe" {
+  usecase "UC-02 Authentification" as UC02
+  usecase "UC-03 Dépôt virtuel" as UC03
+  usecase "UC-05 Placer un ordre" as UC05
+}
+
+Client --> UC02
+Client --> UC03
+Client --> UC05
+UC03 --> Payment : confirmation
+
+@enduml

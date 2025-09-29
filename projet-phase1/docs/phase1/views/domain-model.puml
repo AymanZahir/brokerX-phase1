@@ -1,0 +1,144 @@
+@startuml
+skinparam backgroundColor #ffffff
+skinparam classFontName Courier
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam dpi 120
+
+package "Client & Comptes" {
+  class CompteClient {
+    +IdentifiantClient id
+    +Email email
+    +StatutCompte statut
+    +Horodatage creeLe
+    +Horodatage activeLe
+    +AuthProfile auth
+    +List<FacteurMFA> facteurs
+    +activer()
+    +suspendre(Raison)
+  }
+
+  class AuthProfile {
+    +MotDePasseHash hash
+    +int tentativesEchouees
+    +Verrouillage verrouillage
+  }
+
+  class FacteurMFA {
+    +TypeMFA type
+    +Canal canal
+    +EtatFacteur etat
+  }
+
+  CompteClient "1" o-- "1" AuthProfile
+  CompteClient "1" o-- "*" FacteurMFA
+}
+
+package "Portefeuilles & Positions" {
+  class Portefeuille {
+    +IdentifiantPortefeuille id
+    +IdentifiantClient clientId
+    +Devise devise
+    +Montant soldeDisponible
+    +Montant soldeReserve
+    +crediter(Montant)
+    +debiter(Montant)
+    +reserver(Montant)
+    +libererReservation(Reservation)
+  }
+
+  class Position {
+    +TickerSymbol symbole
+    +Quantite quantiteTotale
+    +Quantite quantiteDisponible
+    +PrixMoyen coutUnitaire
+  }
+
+  class MouvementComptable {
+    +IdentifiantMouvement id
+    +TypeMouvement type
+    +Montant montant
+    +Horodatage horodatage
+    +String reference
+  }
+
+  class Reservation {
+    +IdentifiantReservation id
+    +Montant montant
+    +Quantite quantiteTitres
+    +ReservationStatut statut
+  }
+
+  Portefeuille "1" o-- "*" Position
+  Portefeuille "1" o-- "*" MouvementComptable
+  Portefeuille "1" o-- "*" Reservation
+}
+
+package "Ordres & Appariement" {
+  class Ordre {
+    +IdentifiantOrdre id
+    +IdentifiantClient clientId
+    +TickerSymbol symbole
+    +SensOrdre sens
+    +TypeOrdre type
+    +Quantite quantite
+    +Prix limite
+    +DureeValidite duree
+    +EtatOrdre etat
+    +Horodatage horodatage
+    +String clientOrderId
+    +accepter()
+    +rejeter(Raison)
+    +mettreAJourEtat(EtatOrdre)
+  }
+
+  class ExecutionReport {
+    +IdentifiantExecution id
+    +IdentifiantOrdre ordreId
+    +Quantite quantite
+    +Prix prix
+    +ExecutionType type
+    +Horodatage horodatage
+  }
+
+  class ReglePreTrade {
+    +Nom nom
+    +TypeRegle type
+    +Resultat evaluer(Ordre, Portefeuille)
+  }
+
+  Ordre "1" -- "*" ExecutionReport
+  Ordre "1" -- "*" Reservation
+  ReglePreTrade --> Ordre
+  ReglePreTrade --> Portefeuille
+}
+
+package "Notifications" {
+  class Notification {
+    +IdentifiantNotification id
+    +TypeNotification type
+    +Canal canal
+    +Horodatage emisLe
+    +Payload contenu
+  }
+}
+
+package "Conformite" {
+  class JournalAudit {
+    +IdentifiantAudit id
+    +Horodatage horodatage
+    +Acteur acteur
+    +Action action
+    +Payload details
+  }
+}
+
+CompteClient "1" -- "1" Portefeuille : proprietaire
+Ordre "*" --> CompteClient : soumisPar
+Ordre --> Portefeuille : bloqueDesbloque
+ExecutionReport --> Notification : genere
+Notification --> CompteClient : notifie
+MouvementComptable --> JournalAudit : trace
+Reservation --> MouvementComptable : reference
+
+@enduml

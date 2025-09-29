@@ -1,0 +1,46 @@
+@startuml
+skinparam packageStyle rectangle
+
+package "projet-phase1" {
+  package "src/main/java" {
+    package "com.brokerx.adapters" {
+      package "web" {
+        class AuthController
+        class DepositController
+        class OrderController
+        class HealthController
+        package "support" {
+          class RequestLoggingFilter
+          class GlobalExceptionHandler
+        }
+      }
+      package "persistence" {
+        package "entity" {
+          class AccountEntity
+          class WalletEntity
+          class OrderEntity
+          class TxJournalEntity
+          class AccountCredentialsEntity
+          class AccountSessionEntity
+        }
+        package "repo" {
+          interface AccountJpa
+          interface WalletJpa
+          interface OrderJpa
+          interface TxJournalJpa
+          interface AccountCredentialsJpa
+          interface AccountSessionJpa
+        }
+      }
+    }
+    package "com.brokerx.application" {
+      class Authenticate
+      class DepositFunds
+      class PlaceOrder
+    }
+    package "com.brokerx.config" {
+      class BeanConfig
+    }
+  }
+}
+@enduml

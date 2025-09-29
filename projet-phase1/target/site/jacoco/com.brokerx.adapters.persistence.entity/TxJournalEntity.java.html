@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TxJournalEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">brokerx-phase1</a> &gt; <a href="index.source.html" class="el_package">com.brokerx.adapters.persistence.entity</a> &gt; <span class="el_source">TxJournalEntity.java</span></div><h1>TxJournalEntity.java</h1><pre class="source lang-java linenums">package com.brokerx.adapters.persistence.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(
+    name = &quot;tx_journal&quot;,
+    uniqueConstraints = @UniqueConstraint(columnNames = {&quot;idempotency_key&quot;}))
+public class TxJournalEntity {
+
+  @Id
+  private UUID id;
+
+  @Column(name = &quot;wallet_id&quot;, nullable = false)
+  private UUID walletId;
+
+  @Column(nullable = false)
+  private String type; // DEPOSIT/WITHDRAW
+
+  @Column(nullable = false)
+  private BigDecimal amount;
+
+  @Column(nullable = false)
+  private String status; // PENDING/SETTLED/FAILED
+
+  @Column(name = &quot;idempotency_key&quot;, unique = true)
+  private String idempotencyKey;
+
+<span class="fc" id="L36">  @Column(name = &quot;created_at&quot;, nullable = false)</span>
+<span class="fc" id="L37">  private Instant createdAt = Instant.now();</span>
+
+<span class="fc" id="L39">  public TxJournalEntity() {}</span>
+
+  public TxJournalEntity(
+      UUID id,
+      UUID walletId,
+      String type,
+      BigDecimal amount,
+      String status,
+<span class="fc" id="L47">      String idempotencyKey) {</span>
+<span class="fc" id="L48">    this.id = id;</span>
+<span class="fc" id="L49">    this.walletId = walletId;</span>
+<span class="fc" id="L50">    this.type = type;</span>
+<span class="fc" id="L51">    this.amount = amount;</span>
+<span class="fc" id="L52">    this.status = status;</span>
+<span class="fc" id="L53">    this.idempotencyKey = idempotencyKey;</span>
+<span class="fc" id="L54">  }</span>
+
+  public UUID getId() {
+<span class="fc" id="L57">    return id;</span>
+  }
+
+  public void setId(UUID id) {
+<span class="nc" id="L61">    this.id = id;</span>
+<span class="nc" id="L62">  }</span>
+
+  public UUID getWalletId() {
+<span class="fc" id="L65">    return walletId;</span>
+  }
+
+  public void setWalletId(UUID walletId) {
+<span class="nc" id="L69">    this.walletId = walletId;</span>
+<span class="nc" id="L70">  }</span>
+
+  public String getType() {
+<span class="nc" id="L73">    return type;</span>
+  }
+
+  public void setType(String type) {
+<span class="nc" id="L77">    this.type = type;</span>
+<span class="nc" id="L78">  }</span>
+
+  public BigDecimal getAmount() {
+<span class="nc" id="L81">    return amount;</span>
+  }
+
+  public void setAmount(BigDecimal amount) {
+<span class="nc" id="L85">    this.amount = amount;</span>
+<span class="nc" id="L86">  }</span>
+
+  public String getStatus() {
+<span class="nc" id="L89">    return status;</span>
+  }
+
+  public void setStatus(String status) {
+<span class="fc" id="L93">    this.status = status;</span>
+<span class="fc" id="L94">  }</span>
+
+  public String getIdempotencyKey() {
+<span class="nc" id="L97">    return idempotencyKey;</span>
+  }
+
+  public void setIdempotencyKey(String idempotencyKey) {
+<span class="nc" id="L101">    this.idempotencyKey = idempotencyKey;</span>
+<span class="nc" id="L102">  }</span>
+
+  public Instant getCreatedAt() {
+<span class="nc" id="L105">    return createdAt;</span>
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+<span class="nc" id="L109">    this.createdAt = createdAt;</span>
+<span class="nc" id="L110">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

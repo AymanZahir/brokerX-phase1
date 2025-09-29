@@ -1,0 +1,26 @@
+@startuml
+actor Client
+participant "AuthController" as AuthC
+participant "Authenticate" as Auth
+participant "DepositController" as DepC
+participant "DepositFunds" as Dep
+participant "WalletJpa" as Wallet
+participant "TxJournalJpa" as Tx
+
+Client -> AuthC : POST /auth/login
+AuthC -> Auth : handle()
+Auth --> AuthC : sessionId
+AuthC --> Client : 200 OK
+
+Client -> DepC : POST /deposits
+DepC -> Dep : handle()
+Dep -> Tx : findByIdempotencyKey()
+Tx --> Dep : (none)
+Dep -> Wallet : findByAccountId()
+Wallet --> Dep : wallet
+Dep -> Tx : save(PENDING)
+Dep -> Tx : save(SETTLED)
+Dep -> Wallet : save(+amount)
+Dep --> DepC : Result(newBalance, txId)
+DepC --> Client : 200 OK
+@enduml

@@ -1,0 +1,48 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Adapters" {
+  [AuthController]
+  [DepositController]
+  [OrderController]
+  [RequestLoggingFilter]
+  [AccountJpa]
+  [WalletJpa]
+  [OrderJpa]
+  [TxJournalJpa]
+  [AccountCredentialsJpa]
+  [AccountSessionJpa]
+}
+
+package "Application" {
+  [Authenticate]
+  [DepositFunds]
+  [PlaceOrder]
+}
+
+package "Domain" {
+  [Account]
+  [Wallet]
+  [Order]
+  [TxJournal]
+}
+
+[AuthController] --> [Authenticate]
+[DepositController] --> [DepositFunds]
+[OrderController] --> [PlaceOrder]
+[Authenticate] --> [AccountJpa]
+[Authenticate] --> [AccountCredentialsJpa]
+[Authenticate] --> [AccountSessionJpa]
+[DepositFunds] --> [WalletJpa]
+[DepositFunds] --> [TxJournalJpa]
+[PlaceOrder] --> [WalletJpa]
+[PlaceOrder] --> [OrderJpa]
+
+[AccountJpa] --> [Account]
+[WalletJpa] --> [Wallet]
+[OrderJpa] --> [Order]
+[TxJournalJpa] --> [TxJournal]
+[AccountCredentialsJpa] --> [Account]
+[AccountSessionJpa] --> [Account]
+
+@enduml

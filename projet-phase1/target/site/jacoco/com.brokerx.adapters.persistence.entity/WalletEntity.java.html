@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WalletEntity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">brokerx-phase1</a> &gt; <a href="index.source.html" class="el_package">com.brokerx.adapters.persistence.entity</a> &gt; <span class="el_source">WalletEntity.java</span></div><h1>WalletEntity.java</h1><pre class="source lang-java linenums">package com.brokerx.adapters.persistence.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Entity
+@Table(name = &quot;wallet&quot;)
+public class WalletEntity {
+
+  @Id
+  private UUID id;
+
+  @Column(name = &quot;account_id&quot;, nullable = false)
+  private UUID accountId;
+
+<span class="fc" id="L20">  @Column(name = &quot;available_balance&quot;, nullable = false)</span>
+  private BigDecimal availableBalance = BigDecimal.ZERO;
+
+<span class="fc" id="L23">  public WalletEntity() {}</span>
+
+<span class="fc" id="L25">  public WalletEntity(UUID id, UUID accountId, BigDecimal balance) {</span>
+<span class="fc" id="L26">    this.id = id;</span>
+<span class="fc" id="L27">    this.accountId = accountId;</span>
+<span class="fc" id="L28">    this.availableBalance = balance;</span>
+<span class="fc" id="L29">  }</span>
+
+  public UUID getId() {
+<span class="fc" id="L32">    return id;</span>
+  }
+
+  public void setId(UUID id) {
+<span class="nc" id="L36">    this.id = id;</span>
+<span class="nc" id="L37">  }</span>
+
+  public UUID getAccountId() {
+<span class="nc" id="L40">    return accountId;</span>
+  }
+
+  public void setAccountId(UUID accountId) {
+<span class="nc" id="L44">    this.accountId = accountId;</span>
+<span class="nc" id="L45">  }</span>
+
+  public BigDecimal getAvailableBalance() {
+<span class="fc" id="L48">    return availableBalance;</span>
+  }
+
+  public void setAvailableBalance(BigDecimal availableBalance) {
+<span class="nc" id="L52">    this.availableBalance = availableBalance;</span>
+<span class="nc" id="L53">  }</span>
+
+  public void credit(BigDecimal amount) {
+<span class="fc" id="L56">    this.availableBalance = this.availableBalance.add(amount);</span>
+<span class="fc" id="L57">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

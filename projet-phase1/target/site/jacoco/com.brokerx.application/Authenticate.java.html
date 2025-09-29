@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Authenticate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">brokerx-phase1</a> &gt; <a href="index.source.html" class="el_package">com.brokerx.application</a> &gt; <span class="el_source">Authenticate.java</span></div><h1>Authenticate.java</h1><pre class="source lang-java linenums">package com.brokerx.application;
+
+import com.brokerx.adapters.persistence.entity.AccountCredentialsEntity;
+import com.brokerx.adapters.persistence.entity.AccountEntity;
+import com.brokerx.adapters.persistence.entity.AccountSessionEntity;
+import com.brokerx.adapters.persistence.repo.AccountCredentialsJpa;
+import com.brokerx.adapters.persistence.repo.AccountJpa;
+import com.brokerx.adapters.persistence.repo.AccountSessionJpa;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class Authenticate {
+
+  private final AccountJpa accounts;
+  private final AccountCredentialsJpa credentials;
+  private final AccountSessionJpa sessions;
+  private final Clock clock;
+
+  public Authenticate(
+<span class="fc" id="L26">      AccountJpa accounts, AccountCredentialsJpa credentials, AccountSessionJpa sessions, Clock clock) {</span>
+<span class="fc" id="L27">    this.accounts = accounts;</span>
+<span class="fc" id="L28">    this.credentials = credentials;</span>
+<span class="fc" id="L29">    this.sessions = sessions;</span>
+<span class="fc" id="L30">    this.clock = clock;</span>
+<span class="fc" id="L31">  }</span>
+
+<span class="fc" id="L33">  public record Request(String email, String password, String otp, String ip, String userAgent) {}</span>
+
+<span class="fc" id="L35">  public record Response(UUID sessionId, Instant expiresAt) {}</span>
+
+  @Transactional
+  public Response handle(Request request) {
+<span class="fc" id="L39">    AccountEntity account =</span>
+<span class="pc" id="L40">        accounts.findByEmail(request.email()).orElseThrow(() -&gt; new IllegalArgumentException(&quot;INVALID_CREDENTIALS&quot;));</span>
+
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">    if (!&quot;ACTIVE&quot;.equals(account.getStatus())) {</span>
+<span class="nc" id="L43">      throw new IllegalStateException(&quot;ACCOUNT_NOT_ACTIVE&quot;);</span>
+    }
+
+<span class="fc" id="L46">    AccountCredentialsEntity cred =</span>
+        credentials
+<span class="fc" id="L48">            .findByAccountId(account.getId())</span>
+<span class="pc" id="L49">            .orElseThrow(() -&gt; new IllegalStateException(&quot;CREDENTIALS_MISSING&quot;));</span>
+
+<span class="fc" id="L51">    Instant now = clock.instant();</span>
+<span class="pc bpc" id="L52" title="1 of 4 branches missed.">    if (cred.getLockedUntil() != null &amp;&amp; cred.getLockedUntil().isAfter(now)) {</span>
+<span class="nc" id="L53">      throw new IllegalStateException(&quot;ACCOUNT_LOCKED&quot;);</span>
+    }
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    if (!cred.getPasswordHash().equals(request.password())) {</span>
+<span class="fc" id="L57">      cred.setFailedAttempts(cred.getFailedAttempts() + 1);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">      if (cred.getFailedAttempts() &gt;= 5) {</span>
+<span class="fc" id="L59">        cred.setLockedUntil(now.plus(Duration.ofMinutes(15)));</span>
+      }
+<span class="fc" id="L61">      credentials.save(cred);</span>
+<span class="fc" id="L62">      throw new IllegalArgumentException(&quot;INVALID_CREDENTIALS&quot;);</span>
+    }
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">    if (account.isMfaEnabled()) {</span>
+<span class="fc" id="L66">      String expectedOtp = Optional.ofNullable(cred.getMfaSecret()).orElse(&quot;&quot;);</span>
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">      if (request.otp() == null || !expectedOtp.equals(request.otp())) {</span>
+<span class="fc" id="L68">        throw new IllegalArgumentException(&quot;MFA_REQUIRED&quot;);</span>
+      }
+    }
+
+<span class="fc" id="L72">    cred.setFailedAttempts(0);</span>
+<span class="fc" id="L73">    cred.setLockedUntil(null);</span>
+<span class="fc" id="L74">    credentials.save(cred);</span>
+
+<span class="fc" id="L76">    UUID sessionId = UUID.randomUUID();</span>
+<span class="fc" id="L77">    Instant expiresAt = now.plus(Duration.ofHours(1));</span>
+<span class="fc" id="L78">    AccountSessionEntity session = new AccountSessionEntity(sessionId, account.getId(), now, expiresAt);</span>
+<span class="fc" id="L79">    session.setLastIp(request.ip());</span>
+<span class="fc" id="L80">    session.setUserAgent(request.userAgent());</span>
+<span class="fc" id="L81">    sessions.save(session);</span>
+
+<span class="fc" id="L83">    return new Response(sessionId, expiresAt);</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
