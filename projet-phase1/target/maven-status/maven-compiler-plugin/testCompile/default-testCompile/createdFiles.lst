@@ -1,9 +1,0 @@
-com/brokerx/integration/ScenarioE2ETest$LoginResponse.class
-com/brokerx/unit/PlaceOrderServiceTest.class
-com/brokerx/integration/ScenarioE2ETest.class
-com/brokerx/integration/AuthIntegrationTest.class
-com/brokerx/integration/OrderIntegrationTest.class
-com/brokerx/integration/ScenarioE2ETest$DepositResponse.class
-com/brokerx/integration/ScenarioE2ETest$OrderResponse.class
-com/brokerx/unit/AuthenticateServiceTest.class
-com/brokerx/integration/DepositIntegrationTest.class
