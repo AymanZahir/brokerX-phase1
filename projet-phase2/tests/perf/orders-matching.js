@@ -18,6 +18,7 @@ export default function () {
     headers: { 'Content-Type': 'application/json' }
   });
   check(loginRes, { 'login ok': (r) => r.status === 200 });
+  const token = loginRes.status === 200 ? loginRes.json('token') : null;
 
   const clientOrderId = `load-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
   const orderRes = http.post(`${BASE_URL}/api/v1/orders`, JSON.stringify({
@@ -29,7 +30,7 @@ export default function () {
     limitPrice: 100,
     clientOrderId
   }), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }
   });
   check(orderRes, { 'order accepted': (r) => r.status === 200 });
 

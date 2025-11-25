@@ -7,6 +7,7 @@ import com.brokerx.adapters.persistence.entity.OrderEntity;
 import com.brokerx.adapters.persistence.repo.OrderJpa;
 import com.brokerx.application.AuditLogger;
 import com.brokerx.application.ModifyOrder;
+import com.brokerx.application.events.DomainEventPublisher;
 import com.brokerx.application.support.OrderCacheService;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -27,6 +28,7 @@ class ModifyOrderServiceTest {
   @Mock private OrderJpa orderJpa;
   @Mock private AuditLogger auditLogger;
   @Mock private OrderCacheService orderCacheService;
+  @Mock private DomainEventPublisher eventPublisher;
 
   private ModifyOrder modifyOrder;
   private Clock clock;
@@ -37,7 +39,7 @@ class ModifyOrderServiceTest {
   @BeforeEach
   void setup() {
     clock = Clock.fixed(Instant.parse("2025-01-01T00:00:00Z"), ZoneOffset.UTC);
-    modifyOrder = new ModifyOrder(orderJpa, auditLogger, clock, orderCacheService);
+    modifyOrder = new ModifyOrder(orderJpa, auditLogger, clock, orderCacheService, eventPublisher);
 
     orderId = UUID.randomUUID();
     existing =
@@ -77,6 +79,7 @@ class ModifyOrderServiceTest {
             eq("ORDER_REPLACED"),
             eq(existing.getAccountId()),
             any(ModifyOrder.OrderReplaceAudit.class));
+    verify(eventPublisher).publish(any(), eq(orderId), any());
     verify(orderCacheService).evictForOrder(orderId);
   }
 
@@ -98,6 +101,7 @@ class ModifyOrderServiceTest {
             eq("ORDER_CANCELED"),
             eq(existing.getAccountId()),
             any(ModifyOrder.OrderCancelAudit.class));
+    verify(eventPublisher).publish(any(), eq(orderId), any());
     verify(orderCacheService, atLeastOnce()).evictForOrder(orderId);
   }
 

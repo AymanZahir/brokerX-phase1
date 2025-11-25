@@ -3,6 +3,9 @@ package com.brokerx.application;
 import com.brokerx.adapters.persistence.entity.OrderEntity;
 import com.brokerx.adapters.persistence.repo.OrderJpa;
 import com.brokerx.application.support.OrderCacheService;
+import com.brokerx.application.events.DomainEventPublisher;
+import com.brokerx.application.events.OrderEvents;
+import com.brokerx.application.events.OrderUpdatedEvent;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -17,12 +20,19 @@ public class ModifyOrder {
   private final AuditLogger auditLogger;
   private final Clock clock;
   private final OrderCacheService orderCacheService;
+  private final DomainEventPublisher eventPublisher;
 
-  public ModifyOrder(OrderJpa orders, AuditLogger auditLogger, Clock clock, OrderCacheService orderCacheService) {
+  public ModifyOrder(
+      OrderJpa orders,
+      AuditLogger auditLogger,
+      Clock clock,
+      OrderCacheService orderCacheService,
+      DomainEventPublisher eventPublisher) {
     this.orders = orders;
     this.auditLogger = auditLogger;
     this.clock = clock;
     this.orderCacheService = orderCacheService;
+    this.eventPublisher = eventPublisher;
   }
 
   public record ReplaceCommand(
@@ -68,6 +78,16 @@ public class ModifyOrder {
         order.getAccountId(),
         new OrderReplaceAudit(order.getId(), order.getVersion(), cmd.newQty, cmd.newLimitPrice));
     orderCacheService.evictForOrder(order.getId());
+    eventPublisher.publish(
+        OrderEvents.ORDER_UPDATED,
+        order.getId(),
+        new OrderUpdatedEvent(
+            order.getId(),
+            order.getAccountId(),
+            order.getStatus(),
+            order.getVersion(),
+            order.getQty(),
+            order.getLimitPrice()));
     return mutation;
   }
 
@@ -91,6 +111,16 @@ public class ModifyOrder {
         order.getAccountId(),
         new OrderCancelAudit(order.getId(), order.getVersion()));
     orderCacheService.evictForOrder(order.getId());
+    eventPublisher.publish(
+        OrderEvents.ORDER_CANCELED,
+        order.getId(),
+        new OrderUpdatedEvent(
+            order.getId(),
+            order.getAccountId(),
+            order.getStatus(),
+            order.getVersion(),
+            order.getQty(),
+            order.getLimitPrice()));
     return mutation;
   }
 

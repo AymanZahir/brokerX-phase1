@@ -13,7 +13,12 @@
         "type": "prometheus",
         "uid": "PROMETHEUS_DS"
       },
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
       "targets": [
         {
           "refId": "A",
@@ -28,7 +33,12 @@
         "type": "prometheus",
         "uid": "PROMETHEUS_DS"
       },
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
       "targets": [
         {
           "refId": "B",
@@ -43,14 +53,76 @@
         "type": "prometheus",
         "uid": "PROMETHEUS_DS"
       },
-      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 9},
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
       "targets": [
         {
           "refId": "C",
           "expr": "sum(rate(brokerx_notifications_total[1m])) by (type)"
         }
       ]
+    },
+    {
+      "type": "stat",
+      "title": "Outbox Processed",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "sum by (status) (brokerx_outbox_processed_total)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "horizontal",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Outbox Pending",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 6,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "brokerx_outbox_pending",
+          "legendFormat": "pending",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
     }
   ],
-  "templating": {"list": []}
+  "templating": {
+    "list": []
+  }
 }

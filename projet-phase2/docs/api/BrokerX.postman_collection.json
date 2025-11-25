@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "BrokerX Phase 2",
-    "description": "Collection de requêtes principales pour l'API BrokerX (Phase 2). Base URL configurable via la variable `base_url`.",
+    "description": "Collection de requ\u00eates principales pour l'API BrokerX (Phase 2). Base URL configurable via la variable `base_url`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": {
       "major": 1,
@@ -17,8 +17,14 @@
         "header": [],
         "url": {
           "raw": "{{base_url}}/monolith/actuator/health",
-          "host": ["{{base_url}}"],
-          "path": ["monolith", "actuator", "health"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "monolith",
+            "actuator",
+            "health"
+          ]
         }
       },
       "response": []
@@ -39,8 +45,15 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/signup",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "signup"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "signup"
+          ]
         }
       },
       "response": []
@@ -80,8 +93,15 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/auth/login",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "auth", "login"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
         }
       },
       "response": []
@@ -106,8 +126,14 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/deposits",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "deposits"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "deposits"
+          ]
         }
       },
       "response": []
@@ -132,8 +158,14 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/orders",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "orders"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orders"
+          ]
         }
       },
       "response": []
@@ -150,11 +182,73 @@
         ],
         "url": {
           "raw": "{{base_url}}/api/v1/orders/{{orderId}}/executions",
-          "host": ["{{base_url}}"],
-          "path": ["api", "v1", "orders", "{{orderId}}", "executions"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orders",
+            "{{orderId}}",
+            "executions"
+          ]
         }
       },
       "response": []
+    },
+    {
+      "name": "Market Stream (SSE)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/market/stream?symbol=AAPL",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8081",
+          "path": [
+            "api",
+            "v1",
+            "market",
+            "stream"
+          ],
+          "query": [
+            {
+              "key": "symbol",
+              "value": "AAPL"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Notifications Stream (SSE)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/notifications/stream",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8081",
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "stream"
+          ]
+        }
+      }
     }
   ],
   "variable": [

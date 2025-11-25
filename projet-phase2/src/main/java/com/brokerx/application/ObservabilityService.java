@@ -63,4 +63,21 @@ public class ObservabilityService {
         .register(registry)
         .increment();
   }
+
+  public void recordOutboxProcessed(int success, int failed) {
+    if (success > 0) {
+      Counter.builder("brokerx_outbox_processed_total")
+          .description("Evénements outbox traités avec succès")
+          .tag("status", "success")
+          .register(registry)
+          .increment(success);
+    }
+    if (failed > 0) {
+      Counter.builder("brokerx_outbox_processed_total")
+          .description("Evénements outbox traités avec succès")
+          .tag("status", "failed")
+          .register(registry)
+          .increment(failed);
+    }
+  }
 }

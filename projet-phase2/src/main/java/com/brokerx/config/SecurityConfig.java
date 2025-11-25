@@ -36,10 +36,12 @@ public class SecurityConfig {
                 registry
                     .requestMatchers(
                         "/api/v1/auth/**",
+                        "/api/v1/market/**",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                        "/actuator/**")
+                        "/actuator/**",
+                        "/monolith/actuator/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()

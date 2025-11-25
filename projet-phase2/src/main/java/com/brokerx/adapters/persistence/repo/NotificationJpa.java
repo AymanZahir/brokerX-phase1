@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NotificationJpa extends JpaRepository<NotificationEntity, UUID> {
   List<NotificationEntity> findByOrderId(UUID orderId);
+
+  List<NotificationEntity> findTop20ByAccountIdOrderByCreatedAtDesc(UUID accountId);
 }

@@ -8,9 +8,10 @@ import com.brokerx.adapters.persistence.entity.WalletEntity;
 import com.brokerx.adapters.persistence.repo.OrderJpa;
 import com.brokerx.adapters.persistence.repo.WalletJpa;
 import com.brokerx.application.AuditLogger;
-import com.brokerx.application.MatchOrders;
 import com.brokerx.application.ObservabilityService;
 import com.brokerx.application.PlaceOrder;
+import com.brokerx.application.events.DomainEventPublisher;
+import com.brokerx.application.events.OrderMatchedEvent;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -28,14 +29,14 @@ class PlaceOrderServiceTest {
   @Mock private OrderJpa orderJpa;
   @Mock private WalletJpa walletJpa;
   @Mock private AuditLogger auditLogger;
-  @Mock private MatchOrders matchOrders;
   @Mock private ObservabilityService observabilityService;
+  @Mock private DomainEventPublisher eventPublisher;
 
   private PlaceOrder placeOrder;
 
   @BeforeEach
   void setup() {
-    placeOrder = new PlaceOrder(orderJpa, walletJpa, auditLogger, matchOrders, observabilityService);
+    placeOrder = new PlaceOrder(orderJpa, walletJpa, auditLogger, observabilityService, eventPublisher);
   }
 
   @Test
@@ -62,7 +63,7 @@ class PlaceOrderServiceTest {
 
     assertEquals(orderId, ack.orderId());
     verify(orderJpa, never()).save(any());
-    verify(matchOrders, never()).matchOrder(any());
+    verify(eventPublisher, never()).publish(any(), any(), any());
     verifyNoInteractions(observabilityService);
     verify(auditLogger)
         .record(
@@ -99,8 +100,8 @@ class PlaceOrderServiceTest {
     when(walletJpa.findByAccountId(accountId))
         .thenReturn(Optional.of(new WalletEntity(UUID.randomUUID(), accountId, BigDecimal.ZERO)));
 
-    when(matchOrders.matchOrder(any()))
-        .thenReturn(new MatchOrders.MatchResult(UUID.randomUUID(), "WORKING", 5, List.of()));
+    when(eventPublisher.publish(any(), any(), any()))
+        .thenReturn(List.of(new OrderMatchedEvent(UUID.randomUUID(), "WORKING", 5, List.of())));
 
     PlaceOrder.Ack ack =
         placeOrder.handle(
@@ -116,7 +117,7 @@ class PlaceOrderServiceTest {
             eq("ORDER_ACCEPTED"),
             any(UUID.class),
             any(PlaceOrder.OrderAudit.class));
-    verify(matchOrders).matchOrder(captor.getValue().getId());
+    verify(eventPublisher).publish(any(), eq(captor.getValue().getId()), any());
     verify(observabilityService)
         .recordOrderAccepted(eq("AAPL"), eq("MARKET"));
     assertEquals("WORKING", ack.status());

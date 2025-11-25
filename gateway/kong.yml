@@ -56,5 +56,20 @@ services:
       - name: brokerx-monolith-route
         paths:
           - /monolith
+        strip_path: true
+        preserve_host: true
+  - name: brokerx-monolith-api
+    host: brokerx-monolith-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-market-route
+        paths:
+          - /api/v1/market
+        strip_path: false
+        preserve_host: true
+      - name: brokerx-notifications-route
+        paths:
+          - /api/v1/notifications
         strip_path: false
         preserve_host: true

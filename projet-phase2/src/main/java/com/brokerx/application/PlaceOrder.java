@@ -3,6 +3,10 @@ package com.brokerx.application;
 import com.brokerx.adapters.persistence.entity.OrderEntity;
 import com.brokerx.adapters.persistence.repo.OrderJpa;
 import com.brokerx.adapters.persistence.repo.WalletJpa;
+import com.brokerx.application.events.DomainEventPublisher;
+import com.brokerx.application.events.OrderEvents;
+import com.brokerx.application.events.OrderMatchedEvent;
+import com.brokerx.application.events.OrderPlacedEvent;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,20 +19,20 @@ public class PlaceOrder {
   private final OrderJpa orders;
   private final WalletJpa wallets;
   private final AuditLogger auditLogger;
-  private final MatchOrders matchOrders;
   private final ObservabilityService observabilityService;
+  private final DomainEventPublisher eventPublisher;
 
   public PlaceOrder(
       OrderJpa orders,
       WalletJpa wallets,
       AuditLogger auditLogger,
-      MatchOrders matchOrders,
-      ObservabilityService observabilityService) {
+      ObservabilityService observabilityService,
+      DomainEventPublisher eventPublisher) {
     this.orders = orders;
     this.wallets = wallets;
     this.auditLogger = auditLogger;
-    this.matchOrders = matchOrders;
     this.observabilityService = observabilityService;
+    this.eventPublisher = eventPublisher;
   }
 
   public record Draft(
@@ -80,8 +84,25 @@ public class PlaceOrder {
 
     observabilityService.recordOrderAccepted(order.getSymbol(), order.getType());
 
-    MatchOrders.MatchResult matchResult = matchOrders.matchOrder(order.getId());
-    Ack ack = new Ack(matchResult.orderId(), matchResult.status());
+    OrderPlacedEvent placedEvent =
+        new OrderPlacedEvent(
+            order.getId(),
+            order.getAccountId(),
+            order.getSide(),
+            order.getType(),
+            order.getSymbol(),
+            order.getQty(),
+            order.getLimitPrice());
+
+    String status = order.getStatus();
+    for (Object response :
+        eventPublisher.publish(OrderEvents.ORDER_PLACED, order.getId(), placedEvent)) {
+      if (response instanceof OrderMatchedEvent matchedEvent) {
+        status = matchedEvent.status();
+        break;
+      }
+    }
+    Ack ack = new Ack(order.getId(), status);
     auditLogger.record(
         "ORDER",
         "ORDER_ACCEPTED",

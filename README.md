@@ -11,6 +11,10 @@ Prototype monolithique (architecture hexagonale) pour la plateforme de courtage 
 - Contrat OpenAPI exporté (`projet-phase2/docs/api/brokerx-openapi.json`).
 - Collection Postman (`projet-phase2/docs/api/BrokerX.postman_collection.json`).
 - Source code de l’application (`projet-phase2/`).
+- Flux temps réel (phase 3) :
+  - SSE marché (UC-04) : `GET /api/v1/market/stream?symbol=AAPL` (publique via Kong 8081).
+  - SSE notifications (UC-08) : `GET /api/v1/notifications/stream` (JWT requis).
+  - Grafana sur `http://localhost:3001` (dashboard Golden Signals provisionné).
 
 ## Démarrage
 
@@ -63,7 +67,7 @@ curl -X DELETE http://localhost:8081/api/v1/orders/<ORDER_ID> -H 'Content-Type: 
 curl http://localhost:8081/api/v1/orders/<ORDER_ID>/executions -H "Authorization: Bearer $TOKEN"
 curl http://localhost:8081/api/v1/orders/<ORDER_ID>/notifications -H "Authorization: Bearer $TOKEN"
 ```
-> Astuce : l’API Gateway (`http://localhost:8081`) route désormais vers les microservices dédiés : `/api/v1/auth/**` → `auth-service` (profil `auth`, port local 8086), `/api/v1/deposits` → `portfolio-service` (profil `portfolio`, port 8087), `/api/v1/orders/**` → `orders-service` (profil `orders`, port 8088). Le monolithe reste accessible via `http://localhost:8081/monolith/...` ou directement sur `http://localhost:8085`. Redis est fourni pour le cache (`redis://localhost:6379`), Prometheus sur `http://localhost:9090` et Grafana sur `http://localhost:3000` (identifiants par défaut `admin` / `admin`). Pense à changer le mot de passe après import du dashboard BrokerX.
+> Astuce : l’API Gateway (`http://localhost:8081`) route désormais vers les microservices dédiés : `/api/v1/auth/**` → `auth-service` (profil `auth`, port local 8086), `/api/v1/deposits` → `portfolio-service` (profil `portfolio`, port 8087), `/api/v1/orders/**` → `orders-service` (profil `orders`, port 8088). Le monolithe reste accessible via `http://localhost:8081/monolith/...` ou directement sur `http://localhost:8085`. Redis est fourni pour le cache (`redis://localhost:6379`), Prometheus sur `http://localhost:9090` et Grafana sur `http://localhost:3001` (identifiants par défaut `admin` / `admin`). Pense à changer le mot de passe après import du dashboard BrokerX.
 Arrêt : `docker compose down`.
 
 ### Interface web de démonstration
@@ -104,9 +108,12 @@ mvn spring-boot:run            # nécessite PostgreSQL local (voir application.y
 - Endpoint Prometheus : `curl http://localhost:8080/actuator/prometheus`
 - OpenAPI : `http://localhost:8080/v3/api-docs` (Swagger UI `http://localhost:8080/swagger-ui/index.html`)
 - Métriques clés : `brokerx_orders_accepted_total`, `brokerx_matching_duration_seconds`, `brokerx_matching_executions_total`, `brokerx_matching_qty`, `brokerx_notifications_total`
-- Dashboard Grafana : pré-chargé via la provisioning Grafana (`BrokerX Golden Signals`) et disponible sur http://localhost:3000
+- Dashboard Grafana : pré-chargé via la provisioning Grafana (`BrokerX Golden Signals`) et disponible sur http://localhost:3001
 - Prometheus UI : http://localhost:9090 (scrape `api1`/`api2` toutes les 5 s)
 - Charge synthétique : `k6 run tests/perf/orders-matching.js --vus 10 --duration 30s`
+- Comparatif perf (k6, 5 VU / 30s) :
+  - Gateway (8081) : p90 ≈ 99 ms, p95 ≈ 183 ms, ~8.6 req/s, 0 % erreurs.
+  - Direct api1 (8085) : p90 ≈ 83 ms, p95 ≈ 182 ms, ~8.7 req/s, 0 % erreurs.
 
 ## CI/CD
 - Pipeline GitHub Actions : `.github/workflows/ci.yml` (build + tests + artefact).

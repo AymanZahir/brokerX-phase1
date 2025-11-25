@@ -12,4 +12,9 @@ public class HealthController {
   public Map<String, Object> health() {
     return Map.of("status", "UP", "timestamp", Instant.now().toString());
   }
+
+  @GetMapping("/monolith/actuator/health")
+  public Map<String, Object> healthMonolith() {
+    return health();
+  }
 }

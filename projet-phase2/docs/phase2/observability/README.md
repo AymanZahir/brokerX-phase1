@@ -11,6 +11,8 @@ Le service expose désormais les métriques Prometheus via `http://localhost:808
 | `brokerx_matching_executions_total` | Nombre d'exécutions générées | `symbol` |
 | `brokerx_matching_qty` | Quantité totale appariée (distribution) | `symbol` |
 | `brokerx_notifications_total` | Notifications émises | `type`, `channel` |
+| `brokerx_outbox_processed_total` | Événements outbox traités (success/failed) | `status` |
+| `brokerx_outbox_pending` | Gauge du backlog outbox (dispatch périodique) | *(aucun)* |
 
 Les Golden Signals (latence, trafic, erreurs, saturation) sont visualisés via le dashboard Grafana pré-provisionné `grafana-golden-signals.json`.
 
