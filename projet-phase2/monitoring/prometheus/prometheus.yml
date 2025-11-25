@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: 'brokerx-api'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - api1:8080
+          - api2:8080

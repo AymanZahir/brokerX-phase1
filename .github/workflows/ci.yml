@@ -2,37 +2,33 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
           java-version: '21'
+          distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build & Test
-        working-directory: projet-phase1
-        run: mvn -B clean verify
+      - name: Build & test
+        run: mvn -B verify
 
-      - name: Publish artifact
-        working-directory: projet-phase1
-        run: |
-          mkdir -p target/artifacts
-          cp target/*.jar target/artifacts/
-        if: success()
-
-      - name: Upload artifact
+      - name: Upload JaCoCo report
+        if: always()
         uses: actions/upload-artifact@v4
-        if: success()
         with:
-          name: brokerx-jar
-          path: projet-phase1/target/artifacts/
+          name: jacoco-report
+          path: projet-phase2/target/site/jacoco
+          if-no-files-found: ignore

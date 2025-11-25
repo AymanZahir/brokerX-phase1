@@ -1,0 +1,21 @@
+_format_version: "3.0"
+_transform: true
+
+upstreams:
+  - name: brokerx-upstream
+    algorithm: round-robin
+    targets:
+      - target: api1:8080
+      - target: api2:8080
+
+services:
+  - name: brokerx-service
+    host: brokerx-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-route
+        paths:
+          - /
+        strip_path: false
+        preserve_host: true

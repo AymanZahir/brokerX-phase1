@@ -1,0 +1,174 @@
+{
+  "info": {
+    "name": "BrokerX Phase 2",
+    "description": "Collection de requêtes principales pour l'API BrokerX (Phase 2). Base URL configurable via la variable `base_url`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Health (monolithe)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/monolith/actuator/health",
+          "host": ["{{base_url}}"],
+          "path": ["monolith", "actuator", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Signup",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"demo@brokerx.dev\",\n  \"password\": \"Password!23\",\n  \"fullName\": \"Demo Trader\",\n  \"phone\": \"+15145550123\",\n  \"address\": \"123 Demo Street\",\n  \"country\": \"CA\",\n  \"dateOfBirth\": \"1995-04-10\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/signup",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "auth", "signup"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  var json = pm.response.json();",
+              "  if (json.token) {",
+              "    pm.collectionVariables.set('jwt', json.token);",
+              "  }",
+              "  if (json.sessionId) {",
+              "    pm.collectionVariables.set('sessionId', json.sessionId);",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"seed@brokerx.dev\",\n  \"password\": \"password123\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deposit",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"amount\": 100,\n  \"idempotencyKey\": \"postman-demo-1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/deposits",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "deposits"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Place Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"symbol\": \"AAPL\",\n  \"side\": \"BUY\",\n  \"type\": \"MARKET\",\n  \"qty\": 1,\n  \"clientOrderId\": \"postman-order-1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/orders",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "orders"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Order Executions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/orders/{{orderId}}/executions",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "orders", "{{orderId}}", "executions"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "jwt",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ]
+}

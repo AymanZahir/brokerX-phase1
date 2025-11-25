@@ -1,0 +1,60 @@
+_format_version: "3.0"
+_transform: true
+
+upstreams:
+  - name: brokerx-monolith-upstream
+    algorithm: round-robin
+    targets:
+      - target: api1:8080
+      - target: api2:8080
+  - name: brokerx-auth-upstream
+    targets:
+      - target: auth-service:8080
+  - name: brokerx-portfolio-upstream
+    targets:
+      - target: portfolio-service:8080
+  - name: brokerx-orders-upstream
+    targets:
+      - target: orders-service:8080
+
+services:
+  - name: brokerx-auth-service
+    host: brokerx-auth-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-auth-route
+        paths:
+          - /api/v1/auth
+        strip_path: false
+        preserve_host: true
+  - name: brokerx-portfolio-service
+    host: brokerx-portfolio-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-portfolio-route
+        paths:
+          - /api/v1/deposits
+        strip_path: false
+        preserve_host: true
+  - name: brokerx-orders-service
+    host: brokerx-orders-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-orders-route
+        paths:
+          - /api/v1/orders
+        strip_path: false
+        preserve_host: true
+  - name: brokerx-monolith-service
+    host: brokerx-monolith-upstream
+    port: 8080
+    protocol: http
+    routes:
+      - name: brokerx-monolith-route
+        paths:
+          - /monolith
+        strip_path: false
+        preserve_host: true

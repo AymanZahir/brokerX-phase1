@@ -1,0 +1,56 @@
+{
+  "title": "BrokerX Golden Signals",
+  "uid": "brokerx-golden-signals",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Orders Accepted (rate/min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS_DS"
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(brokerx_orders_accepted_total[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Matching Latency (P95)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS_DS"
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(brokerx_matching_duration_seconds_bucket[1m])) by (le))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Notifications Emitted",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS_DS"
+      },
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 9},
+      "targets": [
+        {
+          "refId": "C",
+          "expr": "sum(rate(brokerx_notifications_total[1m])) by (type)"
+        }
+      ]
+    }
+  ],
+  "templating": {"list": []}
+}
