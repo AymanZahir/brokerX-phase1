@@ -58,6 +58,11 @@ services:
           - /monolith
         strip_path: true
         preserve_host: true
+      - name: brokerx-monolith-root
+        paths:
+          - /
+        strip_path: false
+        preserve_host: true
   - name: brokerx-monolith-api
     host: brokerx-monolith-upstream
     port: 8080
