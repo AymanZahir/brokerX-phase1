@@ -1,0 +1,198 @@
+x-api-env: &api-env
+  DB_URL: jdbc:postgresql://db:5432/brokerx
+  DB_USERNAME: brokerx
+  DB_PASSWORD: brokerx
+  BROKERX_JWT_SECRET: ${BROKERX_JWT_SECRET:-change-me-change-me-change-me-123456}
+  BROKERX_JWT_EXPIRATION_SECONDS: ${BROKERX_JWT_EXPIRATION_SECONDS:-3600}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+  BROKERX_MAIL_ENABLED: ${BROKERX_MAIL_ENABLED:-false}
+  BROKERX_SMTP_HOST: ${BROKERX_SMTP_HOST:-}
+  BROKERX_SMTP_PORT: ${BROKERX_SMTP_PORT:-587}
+  BROKERX_SMTP_USERNAME: ${BROKERX_SMTP_USERNAME:-}
+  BROKERX_SMTP_PASSWORD: ${BROKERX_SMTP_PASSWORD:-}
+  BROKERX_MAIL_FROM: ${BROKERX_MAIL_FROM:-no-reply@brokerx.dev}
+  BROKERX_MAIL_TO_OVERRIDE: ${BROKERX_MAIL_TO_OVERRIDE:-}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+  KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+
+x-api-service: &api-service
+  image: brokerx/app:phase2
+  environment: *api-env
+  depends_on:
+    db:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    interval: 10s
+    timeout: 3s
+    retries: 5
+
+services:
+  api1:
+    <<: *api-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8080"
+    environment:
+      <<: *api-env
+      SPRING_PROFILES_ACTIVE: monolith
+
+  api2:
+    <<: *api-service
+    environment:
+      <<: *api-env
+      SPRING_PROFILES_ACTIVE: monolith
+
+  auth-service:
+    <<: *api-service
+    environment:
+      <<: *api-env
+      SPRING_PROFILES_ACTIVE: auth
+    ports:
+      - "8086:8080"
+
+  portfolio-service:
+    <<: *api-service
+    environment:
+      <<: *api-env
+      SPRING_PROFILES_ACTIVE: portfolio
+    ports:
+      - "8087:8080"
+
+  orders-service:
+    <<: *api-service
+    environment:
+      <<: *api-env
+      SPRING_PROFILES_ACTIVE: orders
+    ports:
+      - "8088:8080"
+
+  gateway:
+    image: kong:3.4
+    depends_on:
+      - api1
+      - api2
+      - auth-service
+      - portfolio-service
+      - orders-service
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_LOG_LEVEL: info
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_PROXY_LISTEN_SSL: "off"
+    ports:
+      - "8081:8000"
+      - "8001:8001"
+    volumes:
+      - ./gateway/kong.yml:/usr/local/kong/declarative/kong.yml:ro
+
+  db:
+    image: postgres:16
+    container_name: brokerx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: brokerx
+      POSTGRES_USER: brokerx
+      POSTGRES_PASSWORD: brokerx
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brokerx -d brokerx"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - api1
+      - api2
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docs/architecture/observability/grafana-golden-signals.json:/var/lib/grafana/dashboards/golden-signals.json:ro
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.1
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.1
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+
+volumes:
+  db-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

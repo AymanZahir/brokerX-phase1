@@ -1,0 +1,74 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+skinparam classBackgroundColor White
+
+package "Auth Service" {
+  class Account {
+    uuid id
+    email
+    status
+    createdAt
+  }
+  class OtpRequest {
+    code
+    expiresAt
+    reason
+  }
+  Account "1" -- "0..*" OtpRequest : génère
+}
+
+package "Portfolio Service" {
+  class Wallet {
+    balance
+    reserved
+  }
+  class TxJournal {
+    txId
+    amount
+    type
+    traceId
+  }
+  Wallet "1" -- "0..*" TxJournal
+}
+
+package "Orders Service" {
+  class Order {
+    orderId
+    side
+    type
+    qty
+    status
+    version
+  }
+  class Execution {
+    executionId
+    fillQty
+    fillPrice
+    fees
+  }
+  Order "1" -- "0..*" Execution
+}
+
+package "Notification Service" {
+  class NotificationMessage {
+    type
+    channel
+    payload
+    traceId
+  }
+  class Template {
+    name
+    locale
+  }
+  Template "1" -- "0..*" NotificationMessage : rend
+}
+
+' Relations inter-services (événements)
+Account ..> Wallet : compte.cree
+Order ..> Wallet : reservation.mise_a_jour
+Execution ..> TxJournal : settlement
+Execution ..> NotificationMessage : execution.cree
+OtpRequest ..> NotificationMessage : otp.demande
+
+@enduml

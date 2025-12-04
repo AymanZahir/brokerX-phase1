@@ -1,16 +1,17 @@
-# BrokerX – Phase 2
+# BrokerX – Remise finale (architecture event-driven)
 
 [![CI](https://github.com/AymanZahir/brokerX-phase1/actions/workflows/ci.yml/badge.svg)](https://github.com/AymanZahir/brokerX-phase1/actions/workflows/ci.yml)
 
 Prototype monolithique (architecture hexagonale) pour la plateforme de courtage BrokerX. Ce dépôt regroupe :
 
-- Documentation Arc42 + 4+1 (`projet-phase2/docs/phase2/arc42/docs.md`).
-- Décisions architecturales (`projet-phase2/docs-livrable/docs-livrable1/adr/`).
-- Détails de la stratégie de tests (`projet-phase2/docs/phase2/tests/test-strategy.md`).
-- Scripts de déploiement & runbook (`projet-phase2/docs/phase2/deploy/README.md`).
-- Contrat OpenAPI exporté (`projet-phase2/docs/api/brokerx-openapi.json`).
-- Collection Postman (`projet-phase2/docs/api/BrokerX.postman_collection.json`).
-- Source code de l’application (`projet-phase2/`).
+- Documentation Arc42 + 4+1 (`brokerx/docs/architecture/arc42/docs.md`).
+- Décisions architecturales (`brokerx/docs-livrable/docs-livrable1/adr/`).
+- Détails de la stratégie de tests (`brokerx/docs/architecture/tests/test-strategy.md`).
+- Scripts de déploiement & runbook (`brokerx/docs/architecture/deploy/README.md`).
+- Contrat OpenAPI exporté (`brokerx/docs/api/brokerx-openapi.json`).
+- Collection Postman (`brokerx/docs/api/BrokerX.postman_collection.json`).
+- Documentation de transformation event-driven (remise finale) : `brokerx/docs/event-driven/architecture-event-driven.md`, `brokerx/docs/event-driven/observability.md`, `brokerx/docs/event-driven/ui-mfa.md`.
+- Source code de l’application (`brokerx/`).
 - Flux temps réel (phase 3) :
   - SSE marché (UC-04) : `GET /api/v1/market/stream?symbol=AAPL` (publique via Kong 8081).
   - SSE notifications (UC-08) : `GET /api/v1/notifications/stream` (JWT requis).
@@ -24,7 +25,7 @@ Prototype monolithique (architecture hexagonale) pour la plateforme de courtage 
 
 ### Option A – via Docker Compose
 ```bash
-cd projet-phase2
+cd brokerx
 ./scripts/deploy.sh         # construit l'image et lance app + PostgreSQL + Redis + Prometheus + Grafana + Gateway + microservices dédiés
 ```
 Puis vérifier :
@@ -71,7 +72,8 @@ curl http://localhost:8081/api/v1/orders/<ORDER_ID>/notifications -H "Authorizat
 Arrêt : `docker compose down`.
 
 ### Interface web de démonstration
-Une fois l'application démarrée (Docker ou `mvn spring-boot:run`), ouvrir `http://localhost:8080/index.html`.
+- Via Docker Compose : `http://localhost:8085/index.html` (instance `api1` mappée sur le port hôte 8085).
+- En dev local (`mvn spring-boot:run`) : `http://localhost:8080/index.html` (port par défaut Spring).
 
 La page fournit trois formulaires :
 - **Connexion** (`/api/v1/auth/login`)
@@ -94,7 +96,7 @@ Le monolithe reste disponible (`api1`/`api2`, profil `monolith`) pour comparaiso
 
 ### Option B – dev local
 ```bash
-cd projet-phase2
+cd brokerx
 mvn clean test                 # exécute unit/int/E2E (Testcontainers)
 mvn verify                     # génère le rapport JaCoCo (utiliser JDK 21)
 mvn spring-boot:run            # nécessite PostgreSQL local (voir application.yml)
@@ -118,16 +120,16 @@ mvn spring-boot:run            # nécessite PostgreSQL local (voir application.y
 ## CI/CD
 - Pipeline GitHub Actions : `.github/workflows/ci.yml` (build + tests + artefact).
 - Badge CI : `https://github.com/AymanZahir/brokerX-phase1/actions/workflows/ci.yml` (déjà configuré ci-dessus). La pipeline exécute `mvn -B verify` et charge le rapport JaCoCo en artefact.
-- Conteneurisation multi-stage (`projet-phase2/Dockerfile`), stack compose (`docker-compose.yml`).
-- Script de déploiement : `projet-phase2/scripts/deploy.sh`.
-- Documentation consolidée : `projet-phase2/docs/phase2/Documentation.md` (Arc42 + stratégie de tests + runbook).
+- Conteneurisation multi-stage (`brokerx/Dockerfile`), stack compose (`docker-compose.yml`).
+- Script de déploiement : `brokerx/scripts/deploy.sh`.
+- Documentation consolidée : `brokerx/docs/architecture/Documentation.md` (Arc42 + stratégie de tests + runbook).
 
 ### Rapports & Livrables supplémentaires
-- Couverture JaCoCo : `projet-phase2/target/site/jacoco/index.html` (généré lors de `mvn verify` avec JDK 21).
-- ADR consolidés : `projet-phase2/docs-livrable/docs-livrable1/adr/`.
+- Couverture JaCoCo : `brokerx/target/site/jacoco/index.html` (généré lors de `mvn verify` avec JDK 21).
+- ADR consolidés : `brokerx/docs-livrable/docs-livrable1/adr/`.
 
 ## Références documentation
-- Analyse métier & vues : `projet-phase2/docs/phase2/arc42/docs.md`
-- Pyramide de tests : `projet-phase2/docs/phase2/tests/test-strategy.md`
-- Runbook : `projet-phase2/docs/phase2/deploy/README.md`
-- Modèle de domaine PlantUML : `projet-phase2/docs/phase2/analysis/domain-model.puml`
+- Analyse métier & vues : `brokerx/docs/architecture/arc42/docs.md`
+- Pyramide de tests : `brokerx/docs/architecture/tests/test-strategy.md`
+- Runbook : `brokerx/docs/architecture/deploy/README.md`
+- Modèle de domaine PlantUML : `brokerx/docs/architecture/analysis/domain-model.puml`

@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+
+actor Client as browser
+node "Docker Host" {
+  frame "docker-compose" {
+    node "API Gateway\nKong (8081)" as gateway
+    node "Auth Service\nSpring Boot (8086)" as auth
+    node "Portfolio Service\nSpring Boot (8087)" as portfolio
+    node "Orders Service\nSpring Boot (8088)" as orders
+    node "Monolith api1\nSpring Boot (8085)" as api1
+    node "Kafka\n(9092)" as kafka
+    node "Zookeeper\n(2181)" as zookeeper
+    node "Redis\n(6379)" as redis
+    database "PostgreSQL\n(5432)" as db
+    node "Prometheus\n(9090)" as prometheus
+    node "Grafana\n(3001)" as grafana
+    node "Jaeger\nUI 16686 / OTLP 4317" as jaeger
+  }
+}
+
+cloud "SMTP Mailtrap" as smtp
+
+browser --> gateway
+gateway --> auth : /api/v1/auth/**
+gateway --> portfolio : /api/v1/deposits
+gateway --> orders : /api/v1/orders/**
+gateway --> api1 : /monolith/**
+
+auth --> db
+portfolio --> db
+orders --> db
+api1 --> db
+
+auth --> kafka : events\n(account.created)
+portfolio --> kafka : events\n(deposit.validated)
+orders --> kafka : events\n(order.placed / updated)
+kafka --> zookeeper
+
+auth --> redis
+portfolio --> redis
+orders --> redis
+api1 --> redis
+
+auth --> smtp : OTP email
+
+prometheus <-down- auth
+prometheus <-down- portfolio
+prometheus <-down- orders
+prometheus <-down- api1
+grafana --> prometheus
+
+auth --> jaeger
+portfolio --> jaeger
+orders --> jaeger
+api1 --> jaeger
+
+browser <-- gateway : SSE /notifications
+
+@enduml

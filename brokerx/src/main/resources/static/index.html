@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>BrokerX – Démo Event-Driven</title>
+  <style>
+    :root {
+      --bg: #0f1624;
+      --card: #111c2f;
+      --accent: #7cf0ff;
+      --accent-2: #ffb86c;
+      --text: #dfe7ff;
+      --muted: #9fb0d6;
+      --danger: #ff7b7b;
+      --success: #7dffb3;
+      --radius: 14px;
+      --shadow: 0 18px 40px rgba(0,0,0,0.35);
+      font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: radial-gradient(circle at 20% 20%, rgba(124,240,255,0.08), transparent 35%), radial-gradient(circle at 80% 0%, rgba(255,184,108,0.08), transparent 40%), var(--bg);
+      color: var(--text);
+    }
+    h1 { margin: 0 0 8px 0; font-weight: 700; }
+    p { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    label { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(120deg, var(--accent), #86f7c7);
+      color: #041221;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, box-shadow .08s ease;
+      box-shadow: 0 10px 25px rgba(124,240,255,0.25);
+    }
+    button.secondary {
+      background: linear-gradient(120deg, #ffa85c, #ff7b7b);
+      box-shadow: 0 10px 25px rgba(255,168,92,0.25);
+    }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    .status {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .ok { color: var(--success); font-weight: 700; }
+    .err { color: var(--danger); font-weight: 700; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(124,240,255,0.12);
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 0.4px;
+    }
+    .log {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      background: #080f1b;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 160px;
+      max-height: 260px;
+      overflow: auto;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 12px;
+      border-radius: 12px;
+      margin-right: 8px;
+    }
+    .accent { color: var(--accent); }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BrokerX</h1>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h3>1) Inscription</h3>
+      <label>Courriel</label>
+      <input id="signup-email" type="email" value="new-user@brokerx.dev" />
+      <label>Mot de passe</label>
+      <input id="signup-password" type="password" value="Password!23" />
+      <div class="row">
+        <div>
+          <label>Nom complet</label>
+          <input id="signup-name" type="text" value="New Trader" />
+        </div>
+        <div>
+          <label>Téléphone</label>
+          <input id="signup-phone" type="text" value="+15145550123" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Pays</label>
+          <input id="signup-country" type="text" value="CA" />
+        </div>
+        <div>
+          <label>Date de naissance</label>
+          <input id="signup-dob" type="date" value="1995-04-10" />
+        </div>
+      </div>
+      <label>Adresse</label>
+      <input id="signup-address" type="text" value="123 Demo Street, QC" />
+      <button onclick="signup()">Créer le compte</button>
+      <div id="signup-status" class="status"></div>
+      <p class="muted" style="margin-top:6px;">Un code OTP est envoyé par courriel. Étape suivante : validation.</p>
+    </div>
+
+    <div class="card">
+      <h3>2) Vérifier le courriel (OTP)</h3>
+      <label>Account ID</label>
+      <input id="verify-account" type="text" placeholder="auto-rempli après signup" />
+      <label>Code OTP reçu</label>
+      <input id="verify-otp" type="text" placeholder="Saisir le code du courriel" />
+      <button class="secondary" onclick="verifyEmail()">Valider le compte</button>
+      <div id="verify-status" class="status"></div>
+      <p class="muted" style="margin-top:6px;">Si le code expire, relance le signup pour en recevoir un nouveau.</p>
+    </div>
+
+    <div class="card">
+      <h3>3) Connexion MFA</h3>
+      <label>Courriel</label>
+      <input id="login-email" type="email" value="seed@brokerx.dev" />
+      <label>Mot de passe</label>
+      <input id="login-password" type="password" value="password123" />
+      <label>OTP (MFA)</label>
+      <input id="login-otp" type="text" value="123456" />
+      <button onclick="authenticate()">Se connecter</button>
+      <div id="login-status" class="status"></div>
+      <p class="muted" style="margin-top:6px;">Le JWT est stocké localement pour les appels suivants. Change l’OTP après une demande de step-up.</p>
+    </div>
+
+    <div class="card">
+      <h3>4) Dépôt virtuel</h3>
+      <label>Account ID</label>
+      <input id="deposit-account" type="text" value="11111111-1111-1111-1111-111111111111" />
+      <div class="row">
+        <div>
+          <label>Montant</label>
+          <input id="deposit-amount" type="number" value="100" />
+        </div>
+        <div>
+          <label>Idempotency Key</label>
+          <input id="deposit-idem" type="text" value="demo-ui-1" />
+        </div>
+      </div>
+      <button onclick="deposit()">Effectuer le dépôt</button>
+      <div id="deposit-status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>5) Placer un ordre</h3>
+      <label>Account ID</label>
+      <input id="order-account" type="text" value="11111111-1111-1111-1111-111111111111" />
+      <div class="row">
+        <div>
+          <label>Symbole</label>
+          <input id="order-symbol" type="text" value="AAPL" />
+        </div>
+        <div>
+          <label>Quantité</label>
+          <input id="order-qty" type="number" value="10" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Type</label>
+          <select id="order-type">
+            <option>MARKET</option>
+            <option>LIMIT</option>
+          </select>
+        </div>
+        <div>
+          <label>Prix limite</label>
+          <input id="order-price" type="number" placeholder="laisser vide pour MARKET" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Sens</label>
+          <select id="order-side">
+            <option>BUY</option>
+            <option>SELL</option>
+          </select>
+        </div>
+        <div>
+          <label>clientOrderId</label>
+          <input id="order-client-id" type="text" value="demo-order-ui-1" />
+        </div>
+      </div>
+      <button onclick="placeOrder()">Placer l’ordre</button>
+      <div id="order-status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>Notifications temps réel</h3>
+      <p class="muted">S’abonner aux événements (OTP, exécutions, dépôts). Requiert le JWT issu du login.</p>
+      <div class="row" style="margin-bottom:12px;">
+        <button onclick="startNotifications()">Démarrer le flux SSE</button>
+        <button class="secondary" onclick="stopNotifications()">Arrêter</button>
+      </div>
+      <div class="log" id="sse-log"></div>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:18px;">
+    <h3>Journal des appels</h3>
+    <div id="log" class="log"></div>
+  </section>
+
+  <script>
+    const logBox = document.getElementById('log');
+    const sseBox = document.getElementById('sse-log');
+    let authToken = null;
+    let lastAccountId = '';
+    let eventSource = null;
+
+    function appendLog(container, message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.textContent = `[${time}] ${message}`;
+      if (type === 'error') line.style.color = '#ff8a80';
+      if (type === 'success') line.style.color = '#7dffb3';
+      container.appendChild(line);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function signup() {
+      const payload = {
+        email: document.getElementById('signup-email').value,
+        password: document.getElementById('signup-password').value,
+        fullName: document.getElementById('signup-name').value,
+        phone: document.getElementById('signup-phone').value,
+        address: document.getElementById('signup-address').value,
+        country: document.getElementById('signup-country').value,
+        dateOfBirth: document.getElementById('signup-dob').value
+      };
+      await callEndpoint('/api/v1/auth/signup', payload, 'signup-status', body => {
+        lastAccountId = body.accountId || '';
+        if (lastAccountId) {
+          document.getElementById('verify-account').value = lastAccountId;
+          document.getElementById('deposit-account').value = lastAccountId;
+          document.getElementById('order-account').value = lastAccountId;
+        }
+        // Si l'OTP est exposé (mode démo), on le pré-remplit pour une validation rapide
+        if (body.otp) {
+          document.getElementById('verify-otp').value = body.otp;
+          appendLog(logBox, `OTP (demo): ${body.otp}`, 'info');
+        }
+        return `Compte créé (${body.status || 'PENDING'}). AccountId=${body.accountId || '—'}`;
+      });
+    }
+
+    async function verifyEmail() {
+      const payload = {
+        accountId: document.getElementById('verify-account').value,
+        otp: document.getElementById('verify-otp').value
+      };
+      await callEndpoint('/api/v1/auth/signup/confirm', payload, 'verify-status', body => `Statut=${body.status || 'ACTIVE'}`);
+    }
+
+    async function authenticate() {
+      const payload = {
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+        otp: document.getElementById('login-otp').value
+      };
+      await callEndpoint(
+        '/api/v1/auth/login',
+        payload,
+        'login-status',
+        data => {
+          authToken = data.token;
+          return `Connecté (sessionId=${data.sessionId || '—'})`;
+        },
+        () => { authToken = null; }
+      );
+    }
+
+    async function deposit() {
+      const payload = {
+        accountId: document.getElementById('deposit-account').value,
+        amount: Number(document.getElementById('deposit-amount').value),
+        idempotencyKey: document.getElementById('deposit-idem').value
+      };
+      await callEndpoint('/api/v1/deposits', payload, 'deposit-status', data => `Nouveau solde = ${data.newBalance}`);
+    }
+
+    async function placeOrder() {
+      const payload = {
+        accountId: document.getElementById('order-account').value,
+        side: document.getElementById('order-side').value.toUpperCase(),
+        type: document.getElementById('order-type').value.toUpperCase(),
+        symbol: document.getElementById('order-symbol').value.toUpperCase(),
+        qty: Number(document.getElementById('order-qty').value),
+        limitPrice: document.getElementById('order-price').value ? Number(document.getElementById('order-price').value) : null,
+        clientOrderId: document.getElementById('order-client-id').value
+      };
+      await callEndpoint('/api/v1/orders', payload, 'order-status', data => `orderId=${data.orderId} status=${data.status}`);
+    }
+
+    async function callEndpoint(path, payload, statusElementId, successFormatter, onError) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+        const res = await fetch(path, { method: 'POST', headers, body: JSON.stringify(payload) });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const message = successFormatter(body);
+          document.getElementById(statusElementId).innerHTML = `<span class="ok">OK</span> ${message}`;
+          appendLog(logBox, `${path} → ${message}`, 'success');
+        } else {
+          document.getElementById(statusElementId).innerHTML = `<span class="err">${body.code || 'ERROR'}</span> ${body.message || 'Erreur'}`;
+          appendLog(logBox, `${path} KO (${body.code || res.status}): ${body.message || res.statusText}`, 'error');
+          if (onError) onError();
+        }
+      } catch (err) {
+        document.getElementById(statusElementId).innerHTML = `<span class="err">Erreur réseau</span>`;
+        appendLog(logBox, `${path} KO: ${err}`, 'error');
+        if (onError) onError();
+      }
+    }
+
+    function startNotifications() {
+      if (!authToken) {
+        appendLog(sseBox, 'JWT requis : connecte-toi avant de démarrer le flux.', 'error');
+        return;
+      }
+      stopNotifications();
+      const tokenParam = encodeURIComponent(authToken);
+      eventSource = new EventSource(`/api/v1/notifications/stream?token=${tokenParam}`);
+      eventSource.onmessage = evt => appendLog(sseBox, `Event: ${evt.data}`, 'success');
+      eventSource.onerror = () => appendLog(sseBox, 'Flux interrompu (onerror)', 'error');
+      appendLog(sseBox, 'Flux SSE démarré avec JWT');
+    }
+
+    function stopNotifications() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+        appendLog(sseBox, 'Flux SSE arrêté');
+      }
+    }
+  </script>
+</body>
+</html>
