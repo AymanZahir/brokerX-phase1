@@ -2,7 +2,7 @@ spring:
   profiles:
     default: monolith
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/brokerx}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/brokerx_monolith}
     username: ${DB_USERNAME:brokerx}
     password: ${DB_PASSWORD:brokerx}
   jpa:
@@ -75,3 +75,27 @@ brokerx:
     from: ${BROKERX_MAIL_FROM:no-reply@brokerx.dev}
     to-override: ${BROKERX_MAIL_TO_OVERRIDE:}
     expose-otp-response: ${BROKERX_MAIL_EXPOSE_OTP_RESPONSE:false}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: auth
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/brokerx_auth}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: portfolio
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/brokerx_portfolio}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: orders
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/brokerx_orders}

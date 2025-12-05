@@ -1,0 +1,30 @@
+@startuml
+skinparam backgroundColor #ffffff
+left to right direction
+
+actor Client
+actor Admin
+
+rectangle "BrokerX+" {
+  usecase "S'inscrire\n(OTP courriel)" as UC1
+  usecase "Se connecter\n(JWT)" as UC2
+  usecase "Déposer des fonds\nvirtuels" as UC3
+  usecase "Passer un ordre\n(Market/Limit)" as UC4
+  usecase "Modifier/annuler\nun ordre" as UC5
+  usecase "Recevoir\nnotifications temps réel" as UC6
+  usecase "Consulter métriques\net traces" as UC7
+}
+
+Client --> UC1
+Client --> UC2
+Client --> UC3
+Client --> UC4
+Client --> UC5
+Client --> UC6
+Admin --> UC7
+
+UC2 --> UC6 : JWT requis
+UC4 --> UC6 : événements SSE
+UC5 --> UC6 : événements SSE
+
+@enduml

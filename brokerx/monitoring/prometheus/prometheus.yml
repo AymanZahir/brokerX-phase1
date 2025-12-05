@@ -9,3 +9,6 @@ scrape_configs:
       - targets:
           - api1:8080
           - api2:8080
+          - auth-service:8080
+          - portfolio-service:8080
+          - orders-service:8080

@@ -1,26 +1,17 @@
 @startuml
-actor Client
-participant "AuthController" as AuthC
-participant "Authenticate" as Auth
-participant "DepositController" as DepC
-participant "DepositFunds" as Dep
-participant "WalletJpa" as Wallet
-participant "TxJournalJpa" as Tx
+actor ":Client" as Client
+participant ":API Gateway\nKong" as Gateway
+participant ":Portfolio Service" as Portfolio
+database ":PostgreSQL\nbrokerx_portfolio" as DB
+participant ":Kafka" as Kafka
 
-Client -> AuthC : POST /auth/login
-AuthC -> Auth : handle()
-Auth --> AuthC : sessionId
-AuthC --> Client : 200 OK
-
-Client -> DepC : POST /deposits
-DepC -> Dep : handle()
-Dep -> Tx : findByIdempotencyKey()
-Tx --> Dep : (none)
-Dep -> Wallet : findByAccountId()
-Wallet --> Dep : wallet
-Dep -> Tx : save(PENDING)
-Dep -> Tx : save(SETTLED)
-Dep -> Wallet : save(+amount)
-Dep --> DepC : Result(newBalance, txId)
-DepC --> Client : 200 OK
+Client -> Gateway : POST /api/v1/deposits (JWT)
+Gateway -> Portfolio : Route /deposits
+Portfolio -> DB : Tx idempotency ?\nWallet by accountId
+DB --> Portfolio : OK / existing
+Portfolio -> DB : Insert Tx (PENDING)\nUpdate wallet (+amount)\nUpdate Tx (SETTLED)
+Portfolio -> Kafka : Publish "deposit.validated"\n{depositId, accountId, amount, balance}
+Kafka --> Kafka : (disponible pour\norders/notifications)
+Portfolio --> Gateway : 200 OK (newBalance, txId)
+Gateway --> Client : 200 OK
 @enduml

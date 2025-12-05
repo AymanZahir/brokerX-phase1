@@ -4,9 +4,16 @@ Objectif : démontrer la migration du monolithe vers des services faiblement co
 
 ## 0. État initial (monolithe) et écart cible
 - **Architecture actuelle** : monolithe Spring Boot hexagonal (auth, portefeuille, ordres, marché, notifications) exposé via API Gateway. DB partagée PostgreSQL + cache Redis. Observabilité Prometheus/Grafana en place.
-- **Points durs** : couplage fort (bases/transactions partagées), appels synchrones internes, absence de propagation de trace vers les traitements asynchrones, notifications liées au runtime du monolithe.
-- **Cible EDA** : services autonomes, base par service, communication par événements (bus Kafka ou RabbitMQ), propagation `traceparent`, réintroduction des flux SSE via un hub dédié, notifications découplées.
-- **Critère de réussite** : pour chaque flux métier (signup, dépôt, ordre), un trajet de trace visible dans Jaeger traversant au moins 3 services, et des événements persistés/consommés sans doublon.
+- **Points durs** : couplage fort (bases/transactions partagées), appels synchrones internes, absence de propagation de trace vers les traitements asynchrones, notifications liées au runtime du monolithe.
+- **Cible EDA** : services autonomes, base par service, communication par événements (bus Kafka ou RabbitMQ), propagation `traceparent`, réintroduction des flux SSE via un hub dédié, notifications découplées.
+- **Critère de réussite** : pour chaque flux métier (signup, dépôt, ordre), un trajet de trace visible dans Jaeger traversant au moins 3 services, et des événements persistés/consommés sans doublon.
+
+### Stack livrée (réelle)
+- Services Spring Boot : `auth-service`, `portfolio-service`, `orders-service`, monolithe `api1` (montrer la transition).
+- Bus : Kafka (+ Zookeeper), producteurs d’événements `account.created`, `deposit.validated`, `order.placed/order.updated`.
+- Bases : un Postgres unique hébergeant 4 bases logiques séparées (`brokerx_monolith`, `brokerx_auth`, `brokerx_portfolio`, `brokerx_orders`).
+- Observabilité : Prometheus scrappe tous les services `/actuator/prometheus`, Grafana (Golden Signals), Jaeger OTLP (4317) + UI (16686).
+- Gateway : Kong (8081) route vers monolithe et services.
 
 ## 1. Vue cible (simple, sans séquence)
 ```mermaid
@@ -73,13 +80,12 @@ usecaseDiagram
 ```
 
 ## 3. Découpage en services
-- **auth-service** : identité, OTP/email, tokens, publie `compte.cree`, `otp.demande`, `connexion.audit`. DB locale `accounts`.
-- **portfolio-service** : dépôts, soldes, réservations; consomme `compte.cree`, produit `depot.valide`, `reservation.mise_a_jour`. DB `wallet`.
-- **orders-service** : validation, carnet/matching, produit `ordre.place`, `ordre.rejete`, `execution.cree`, consomme `reservation.mise_a_jour`, `depot.valide`.
-- **market-data-service** : ticks simulés SSE/WebSocket, publie `tick.marche`.
-- **notification-service** : consomme `otp.demande`, `execution.cree`, `ordre.rejete`, `depot.valide`, route vers email + SSE.
-- **audit-service** : consomme tous les événements, alimente un store immuable ou warehouse léger.
-- **gateway** : route HTTP, auth, rate-limit; reste le point d’entrée unique.
+- **auth-service** : identité, OTP/email, tokens, publie `account.created` (Kafka). DB locale `brokerx_auth`.
+- **portfolio-service** : dépôts, soldes, réservations; publie `deposit.validated`. DB `brokerx_portfolio`.
+- **orders-service** : validation d’ordres, publie `order.placed`, `order.updated`. DB `brokerx_orders`.
+- **monolithe api1** : pour compatibilité/transition (profil `monolith`, base `brokerx_monolith`).
+- **gateway** : route HTTP, auth, rate-limit; point d’entrée unique vers monolithe + services.
+- *(Services cibles non livrés : market-data, notification, audit, matching consumer — à ajouter comme consommateurs Kafka).*
 
 Chaque service expose uniquement ses APIs synchrones minimales (commands/queries) et publie ses faits métier sur le bus pour décrire l’état durable.
 
@@ -142,7 +148,6 @@ Chaque service expose uniquement ses APIs synchrones minimales (commands/queries
 
 ## 9. Livrables inclus
 - Vue cible et cas d’utilisation (Mermaid) dans ce document.
-- Diagramme de classes EDA (PlantUML) : `brokerx/docs/event-driven/class-diagram.puml`.
-- Modèle de domaine et vues Arc42 (PlantUML) : `brokerx/docs/architecture/views/`.
-- Observabilité OTel/Jaeger : guide `brokerx/docs/event-driven/observability.md`.
+- Diagrammes PlantUML : classes EDA (`docs/event-driven/class-diagram.puml`), modèle de domaine (`docs/architecture/views/domain-model.puml`), déploiement (`docs/architecture/views/deployment.puml`), use cases (`docs/architecture/views/use-cases.puml`), séquence ordre EDA (`docs/architecture/views/sequence-order.puml`).
+- Observabilité OTel/Jaeger : guide `docs/event-driven/observability.md`.
 - UI double étape courriel : page statique `src/main/resources/static/index.html`.

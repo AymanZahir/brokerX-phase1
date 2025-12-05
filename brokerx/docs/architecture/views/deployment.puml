@@ -12,7 +12,7 @@ node "Docker Host" {
     node "Kafka\n(9092)" as kafka
     node "Zookeeper\n(2181)" as zookeeper
     node "Redis\n(6379)" as redis
-    database "PostgreSQL\n(5432)" as db
+    database "PostgreSQL\n(5432)\n(brokerx_monolith / brokerx_auth / brokerx_portfolio / brokerx_orders)" as db
     node "Prometheus\n(9090)" as prometheus
     node "Grafana\n(3001)" as grafana
     node "Jaeger\nUI 16686 / OTLP 4317" as jaeger
@@ -44,10 +44,10 @@ api1 --> redis
 
 auth --> smtp : OTP email
 
-prometheus <-down- auth
-prometheus <-down- portfolio
-prometheus <-down- orders
-prometheus <-down- api1
+prometheus -down-> auth
+prometheus -down-> portfolio
+prometheus -down-> orders
+prometheus -down-> api1
 grafana --> prometheus
 
 auth --> jaeger

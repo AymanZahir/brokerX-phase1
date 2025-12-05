@@ -1,48 +1,45 @@
 @startuml
 skinparam componentStyle rectangle
 
-package "Adapters" {
-  [AuthController]
-  [DepositController]
-  [OrderController]
-  [RequestLoggingFilter]
-  [AccountJpa]
-  [WalletJpa]
-  [OrderJpa]
-  [TxJournalJpa]
-  [AccountCredentialsJpa]
-  [AccountSessionJpa]
+package "Gateway" {
+  [Kong API Gateway]
 }
 
-package "Application" {
-  [Authenticate]
-  [DepositFunds]
-  [PlaceOrder]
+package "Services" {
+  [auth-service]
+  [portfolio-service]
+  [orders-service]
+  [monolith api1/api2]
 }
 
-package "Domain" {
-  [Account]
-  [Wallet]
-  [Order]
-  [TxJournal]
+package "Messaging" {
+  [Kafka]
+  [Zookeeper]
 }
 
-[AuthController] --> [Authenticate]
-[DepositController] --> [DepositFunds]
-[OrderController] --> [PlaceOrder]
-[Authenticate] --> [AccountJpa]
-[Authenticate] --> [AccountCredentialsJpa]
-[Authenticate] --> [AccountSessionJpa]
-[DepositFunds] --> [WalletJpa]
-[DepositFunds] --> [TxJournalJpa]
-[PlaceOrder] --> [WalletJpa]
-[PlaceOrder] --> [OrderJpa]
+package "Data" {
+  database "PostgreSQL\n(brokerx_auth\nbrokerx_portfolio\nbrokerx_orders\nbrokerx_monolith)" as PG
+  [Redis]
+}
 
-[AccountJpa] --> [Account]
-[WalletJpa] --> [Wallet]
-[OrderJpa] --> [Order]
-[TxJournalJpa] --> [TxJournal]
-[AccountCredentialsJpa] --> [Account]
-[AccountSessionJpa] --> [Account]
+[Kong API Gateway] --> [auth-service] : /api/v1/auth/**
+[Kong API Gateway] --> [portfolio-service] : /api/v1/deposits
+[Kong API Gateway] --> [orders-service] : /api/v1/orders/**
+[Kong API Gateway] --> [monolith api1/api2] : /monolith/**
+
+[auth-service] --> PG
+[portfolio-service] --> PG
+[orders-service] --> PG
+[monolith api1/api2] --> PG
+
+[auth-service] --> [Redis]
+[portfolio-service] --> [Redis]
+[orders-service] --> [Redis]
+[monolith api1/api2] --> [Redis]
+
+[auth-service] --> [Kafka] : account.created
+[portfolio-service] --> [Kafka] : deposit.validated
+[orders-service] --> [Kafka] : order.placed / updated
+[Kafka] --> [Zookeeper]
 
 @enduml

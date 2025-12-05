@@ -1,0 +1,27 @@
+@startuml
+skinparam backgroundColor #ffffff
+autonumber
+
+actor ":Client" as Client
+participant ":API Gateway\nKong" as Gateway
+participant ":Orders Service" as Orders
+participant ":Kafka" as Kafka
+participant ":Matching Consumer\n(cible)" as Matcher
+participant ":Notification/SSE\n(cible)" as Notify
+
+Client -> Gateway : POST /api/v1/orders (JWT)
+Gateway -> Orders : Route vers /orders
+Orders -> Orders : Valider & persister l'ordre
+Orders -> Kafka : Publier event "order.placed"
+Kafka -> Matcher : Consommer "order.placed"
+Matcher -> Kafka : Publier "order.matched"
+Kafka -> Notify : Consommer "order.matched"
+Notify -> Client : Push SSE /notifications
+
+note right of Orders
+Aujourd'hui : Orders publie déjà "order.placed".
+Matcher/Notify représentent les consommateurs
+EDA à brancher (saga chorégraphiée).
+end note
+
+@enduml

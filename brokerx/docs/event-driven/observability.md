@@ -3,8 +3,8 @@
 Objectif : tracer les flux clés (signup, dépôt, ordre → exécution → notification) sur plusieurs services et relier métriques ↔ traces pour la démonstration finale.
 
 ## 1. Activation OTel (Spring Boot)
-- Ajouter le starter ou Java agent OTel à chaque service : jar agent dans `./monitoring/otel/agent.jar`.
-- Variables communes (docker compose ou env) :
+- Ajouter le starter ou Java agent OTel à chaque service : jar agent dans `./monitoring/otel/agent.jar`.
+- Variables communes (docker compose ou env) :
   - `OTEL_SERVICE_NAME=<nom-service>`
   - `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317`
   - `OTEL_METRICS_EXPORTER=prometheus`
@@ -31,12 +31,17 @@ Objectif : tracer les flux clés (signup, dépôt, ordre → exécution → not
 - Pour les handlers concurrents, utiliser une clé d’idempotence (partitionKey) pour garder l’ordre quand nécessaire (ex : `orderId`).
 
 ## 4. Métriques & exemplars
-- Exposer `/actuator/prometheus` par service; Prometheus scrappe via compose (voir `monitoring/prometheus.yml`).
+- Exposer `/actuator/prometheus` par service; Prometheus scrappe via compose (targets : `api1`, `api2`, `auth-service`, `portfolio-service`, `orders-service`).
 - Activer les exemplars pour lier métriques ↔ traces (`management.otlp.tracing.export.enabled=true`).
-- Golden Signals à suivre : `http_server_requests_seconds`, `brokerx_orders_accepted_total`, `brokerx_matching_duration_seconds`, `brokerx_notifications_total`.
+- Golden Signals à suivre : `http_server_requests_seconds`, `brokerx_orders_accepted_total`, `brokerx_matching_duration_seconds`, `brokerx_notifications_total`.
 
 ## 5. Guide de vérification avant la démo
 - Faire un `signup` + `verify-email` → vérifier dans Jaeger la chaîne `gateway → auth-service → notification-service`.
 - Placer un `deposit` puis un `order` → vérifier spans `gateway → orders-service → portfolio-service → notification-service`.
 - Contrôler que les logs structurés incluent `traceId`/`spanId`.
 - Conserver 1 capture d’écran Jaeger par flux (auth, dépôt, ordre) pour le rapport.
+
+### Accès UI
+- Jaeger UI : http://localhost:16686 (sélectionner `auth-service`, `portfolio-service`, `orders-service`, `api1`).
+- Grafana : http://localhost:3001 (dashboard Golden Signals).
+- Prometheus : http://localhost:9090 si besoin.
